@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediRemind — Hospital Prescription & Reminder System</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #1d6fce;
+      --blue-light: #e8f1fb;
+      --green: #1a9e5c;
+      --green-light: #e6f7ef;
+      --orange: #d97706;
+      --orange-light: #fef3e2;
+      --red: #dc2626;
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --border: #d1d9e0;
+      --text: #1a2332;
+      --muted: #5a6a7e;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ─── Top Nav ─── */
+    header {
+      background: var(--blue);
+      color: #fff;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(29,111,206,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header .logo {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    header .logo span { color: #93c5fd; }
+    header .role-badge {
+      font-size: 12px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* ─── Screen containers ─── */
+    .screen { display: none; padding: 28px 20px; max-width: 860px; margin: 0 auto; }
+    .screen.active { display: block; }
+
+    /* ─── Cards ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+    .card h2 .icon {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .icon-blue { background: var(--blue-light); }
+    .icon-green { background: var(--green-light); }
+    .icon-orange { background: var(--orange-light); }
+
+    /* ─── Form ─── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: #fafcff;
+      transition: border 0.15s;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--blue);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 70px; }
+
+    /* Medicine rows */
+    #med-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .med-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1.2fr 1fr 28px;
+      gap: 8px;
+      align-items: center;
+      background: var(--blue-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .med-row input { background: #fff; }
+    .remove-btn {
+      width: 26px; height: 26px;
+      border: none;
+      background: #fee2e2;
+      color: var(--red);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .add-med-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--blue-light);
+      color: var(--blue);
+      border: 1px dashed #93c5fd;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .add-med-btn:hover { background: #dbeafe; }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-orange { background: var(--orange); color: #fff; }
+    .btn-outline {
+      background: #fff;
+      color: var(--blue);
+      border: 1.5px solid var(--blue);
+    }
+    .btn-sm { padding: 7px 14px; font-size: 13px; }
+
+    .action-row {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;
+    }
+
+    /* ─── Rx Card (Patient view) ─── */
+    .rx-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .rx-hospital h3 { font-size: 18px; font-weight: 700; color: var(--blue); }
+    .rx-hospital p { font-size: 13px; color: var(--muted); }
+    .rx-date { font-size: 13px; color: var(--muted); text-align: right; }
+    .rx-divider { border: none; border-top: 1.5px dashed var(--border); margin: 14px 0; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .info-item label { margin-bottom: 2px; }
+    .info-item .value {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* Medicine table */
+    .med-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .med-table th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .med-table td {
+      padding: 10px 10px;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .med-table tr:last-child td { border-bottom: none; }
+    .med-badge {
+      display: inline-block;
+      background: var(--blue-light);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    /* ─── Reminder cards ─── */
+    .reminder-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 4px;
+    }
+    .reminder-card {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .reminder-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .reminder-card .desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .reminder-card.med-card { border-color: #93c5fd; background: var(--blue-light); }
+    .reminder-card.appt-card { border-color: #6ee7b7; background: var(--green-light); }
+
+    /* ─── Success toast ─── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--green);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 999;
+      box-shadow: 0 4px 16px rgba(26,158,92,0.4);
+    }
+    .toast.show { display: flex; animation: slideUp 0.25s ease; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Step indicator ─── */
+    .step-bar {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 24px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .step-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step.active .step-num { background: var(--blue); color: #fff; }
+    .step.done .step-num { background: var(--green); color: #fff; }
+    .step-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .step.active .step-label { color: var(--blue); }
+    .step.done .step-label { color: var(--green); }
+    .step-line { flex: 1; height: 2px; background: var(--border); margin: 0 8px; }
+    .step-line.done { background: var(--green); }
+
+    /* ─── Appointment badge ─── */
+    .appt-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--orange-light);
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--orange);
+      margin-top: 6px;
+    }
+
+    /* Notes */
+    .notes-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #78350f;
+      margin-top: 10px;
+    }
+
+    /* ─── Role switcher ─── */
+    .role-switcher {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .role-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      color: var(--muted);
+    }
+    .role-btn.active { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .med-row { grid-template-columns: 1fr 1fr; }
+      .reminder-section { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Header ─── -->
+<header>
+  <div class="logo">Medi<span>Remind</span> 🏥</div>
+  <div class="role-badge" id="header-role">Doctor Portal</div>
+</header>
+
+<!-- ─── Toast ─── -->
+<div class="toast" id="toast">✅ <span id="toast-msg">Done!</span></div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1 — DOCTOR
+════════════════════════════════════════════ -->
+<div class="screen active" id="screen-doctor">
+  <div style="max-width:860px;margin:0 auto;">
+
+    <!-- Step bar -->
+    <div class="step-bar">
+      <div class="step active" id="step1">
+        <div class="step-num">1</div>
+        <div class="step-label">Doctor</div>
+      </div>
+      <div class="step-line" id="line1"></div>
+      <div class="step" id="step2">
+        <div class="step-num">2</div>
+        <div class="step-label">Patient</div>
+      </div>
+      <div class="step-line" id="line2"></div>
+      <div class="step" id="step3">
+        <div class="step-num">3</div>
+        <div class="step-label">Reminders</div>
+      </div>
+    </div>
+
+    <!-- Patient Info -->
+    <div class="card">
+      <h2><span class="icon icon-blue">👤</span> Patient Information</h2>
+      <div class="form-grid">
+        <div>
+          <label>Patient Name</label>
+          <input type="text" id="pt-name" placeholder="e.g. Ahmad bin Ali" value="Ahmad bin Ali" />
+        </div>
+        <div>
+          <label>Patient ID / IC</label>
+          <input type="text" id="pt-id" placeholder="e.g. 900101-14-5678" value="900101-14-5678" />
+        </div>
+        <div>
+          <label>Age</label>
+          <input type="text" id="pt-age" placeholder="e.g. 34" value="34" />
+        </div>
+        <div>
+          <label>Gender</label>
+          <select id="pt-gender">
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <div>
+          <label>Attending Doctor</label>
+          <input type="text" id="doc-name" placeholder="Dr. Name" value="Dr. Lim Wei Jian" />
+        </div>
+        <div>
+          <label>Department</label>
+          <input type="text" id="doc-dept" placeholder="e.g. Cardiology" value="Internal Medicine" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Diagnosis & Prescription -->
+    <div class="card">
+      <h2><span class="icon icon-blue">💊</span> Diagnosis & Prescription</h2>
+      <div class="form-grid">
+        <div class="full">
+          <label>Diagnosis</label>
+          <input type="text" id="diagnosis" placeholder="e.g. Type 2 Diabetes Mellitus" value="Type 2 Diabetes Mellitus, Hypertension" />
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <label style="margin-bottom:8px;">Medicines Prescribed</label>
+
+        <!-- Column headers -->
+        <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr 28px;gap:8px;padding:0 10px;margin-bottom:4px;">
+          <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;">Medicine Name</span>
+          <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;">Dosage</span>
+          <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;">Frequency</span>
+          <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;">Duration</span>
+          <span></span>
+        </div>
+
+        <div id="med-list">
+          <!-- rows injected by JS -->
+        </div>
+        <button class="add-med-btn" onclick="addMedRow()">+ Add Medicine</button>
+      </div>
+
+      <div class="form-grid" style="margin-top:14px;">
+        <div class="full">
+          <label>Doctor's Notes / Instructions</label>
+          <textarea id="doc-notes" placeholder="e.g. Take medication after meals. Monitor blood pressure daily. Reduce salt intake.">Take medication after meals. Monitor blood pressure daily. Reduce salt intake and sugar intake. Return if symptoms worsen.</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appointment -->
+    <div class="card">
+      <h2><span class="icon icon-orange">📅</span> Next Appointment</h2>
+      <div class="form-grid">
+        <div>
+          <label>Appointment Date</label>
+          <input type="date" id="appt-date" />
+        </div>
+        <div>
+          <label>Appointment Time</label>
+          <input type="time" id="appt-time" value="10:00" />
+        </div>
+        <div>
+          <label>Hospital / Clinic</label>
+          <input type="text" id="appt-hospital" value="KL General Hospital" />
+        </div>
+        <div>
+          <label>Department / Room</label>
+          <input type="text" id="appt-dept" value="Internal Medicine, Room 3B" />
+        </div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-primary" onclick="issueRx()">📤 Issue Prescription to Patient →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2 — PATIENT VIEW
+════════════════════════════════════════════ -->
+<div class="screen" id="screen-patient">
+  <div style="max-width:860px;margin:0 auto;">
+
+    <div class="step-bar">
+      <div class="step done" id="step1b">
+        <div class="step-num">✓</div>
+        <div class="step-label">Doctor</div>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step active" id="step2b">
+        <div class="step-num">2</div>
+        <div class="step-label">Patient</div>
+      </div>
+      <div class="step-line" id="line2b"></div>
+      <div class="step" id="step3b">
+        <div class="step-num">3</div>
+        <div class="step-label">Reminders</div>
+      </div>
+    </div>
+
+    <!-- Role switcher -->
+    <div class="role-switcher">
+      <button class="role-btn" onclick="switchRole('doctor')">🩺 Doctor View</button>
+      <button class="role-btn active">📱 Patient View</button>
+    </div>
+
+    <!-- Prescription card -->
+    <div class="card" id="rx-card">
+      <div class="rx-header">
+        <div class="rx-hospital">
+          <h3 id="rx-hospital-name">KL General Hospital</h3>
+          <p id="rx-dept-display">Internal Medicine</p>
+        </div>
+        <div class="rx-date">
+          <div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;">Prescription Date</div>
+          <div style="font-weight:700;" id="rx-date-display">—</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Rx #<span id="rx-number">—</span></div>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Patient</label>
+          <div class="value" id="rx-pt-name">—</div>
+        </div>
+        <div class="info-item">
+          <label>IC / ID</label>
+          <div class="value" id="rx-pt-id">—</div>
+        </div>
+        <div class="info-item">
+          <label>Age / Gender</label>
+          <div class="value" id="rx-pt-age">—</div>
+        </div>
+        <div class="info-item">
+          <label>Attending Doctor</label>
+          <div class="value" id="rx-doc-name">—</div>
+        </div>
+        <div class="info-item full" style="grid-column:1/-1">
+          <label>Diagnosis</label>
+          <div class="value" id="rx-diagnosis" style="font-size:14px;">—</div>
+        </div>
+      </div>
+
+      <hr class="rx-divider" />
+
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💊 Prescribed Medicines</div>
+      <table class="med-table">
+        <thead>
+          <tr>
+            <th>Medicine</th>
+            <th>Dosage</th>
+            <th>Frequency</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody id="rx-med-body">
+        </tbody>
+      </table>
+
+      <div class="notes-box" id="rx-notes-box">
+        <strong>📋 Doctor's Notes:</strong> <span id="rx-notes">—</span>
+      </div>
+
+      <hr class="rx-divider" />
+
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📅 Next Appointment</div>
+      <div class="appt-badge" id="rx-appt-badge">—</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-outline btn-sm" onclick="switchRole('doctor')">← Back to Doctor</button>
+      <button class="btn btn-primary" onclick="goToReminders()">⏰ Set Reminders →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3 — REMINDERS
+════════════════════════════════════════════ -->
+<div class="screen" id="screen-reminders">
+  <div style="max-width:860px;margin:0 auto;">
+
+    <div class="step-bar">
+      <div class="step done">
+        <div class="step-num">✓</div>
+        <div class="step-label">Doctor</div>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step done">
+        <div class="step-num">✓</div>
+        <div class="step-label">Patient</div>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step active">
+        <div class="step-num">3</div>
+        <div class="step-label">Reminders</div>
+      </div>
+    </div>
+
+    <div class="role-switcher">
+      <button class="role-btn" onclick="switchRole('doctor')">🩺 Doctor View</button>
+      <button class="role-btn" onclick="switchRole('patient')">📋 Prescription</button>
+      <button class="role-btn active">⏰ Reminders</button>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon icon-blue">⏰</span> Set Calendar Reminders</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:18px;">
+        Download and open the reminder files below. They will open directly in your device calendar — iPhone, Android, Google Calendar, or Outlook.
+      </p>
+
+      <div class="reminder-section">
+
+        <!-- Medication reminder -->
+        <div class="reminder-card med-card">
+          <h3>💊 Daily Medication Reminder</h3>
+          <div class="desc" id="med-reminder-desc">
+            Adds a daily repeating reminder for each of your medications at your chosen time.
+          </div>
+          <div style="margin-bottom:12px;">
+            <label>Reminder Time</label>
+            <input type="time" id="med-time" value="08:00" style="max-width:140px;" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="downloadMedReminder()">📥 Add to Calendar</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;">Downloads a .ics file — open it to add to your calendar</div>
+        </div>
+
+        <!-- Appointment reminder -->
+        <div class="reminder-card appt-card">
+          <h3>📅 Appointment Reminder</h3>
+          <div class="desc" id="appt-reminder-desc">
+            Adds your upcoming doctor's appointment to your calendar with a 1-hour advance alert.
+          </div>
+          <div id="appt-reminder-info" style="margin-bottom:12px;font-size:14px;font-weight:600;color:var(--green);"></div>
+          <button class="btn btn-green btn-sm" onclick="downloadApptReminder()">📥 Add to Calendar</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;">Downloads a .ics file — open it to add to your calendar</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Preview section -->
+    <div class="card" id="reminder-preview">
+      <h2><span class="icon icon-green">📱</span> Your Scheduled Reminders</h2>
+      <div id="reminder-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-outline btn-sm" onclick="switchRole('patient')">← Back to Prescription</button>
+      <button class="btn btn-primary" onclick="resetDemo()">🔄 New Prescription (Reset)</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────── -->
+<script>
+  // ─── State ───────────────────────────────
+  let rxData = {};
+  let medRows = [];
+  let medReminderAdded = false;
+  let apptReminderAdded = false;
+
+  // ─── Init ────────────────────────────────
+  window.onload = function() {
+    // Set default appointment date = 1 month from today
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    document.getElementById('appt-date').value = d.toISOString().split('T')[0];
+
+    // Seed 2 default medicines
+    addMedRow('Metformin', '500mg', 'Twice daily (after meal)', '30 days');
+    addMedRow('Amlodipine', '5mg', 'Once daily (morning)', '30 days');
+  };
+
+  // ─── Add medicine row ────────────────────
+  function addMedRow(name='', dosage='', freq='', duration='') {
+    const id = Date.now() + Math.random();
+    medRows.push(id);
+    const list = document.getElementById('med-list');
+    const row = document.createElement('div');
+    row.className = 'med-row';
+    row.id = 'med-' + id;
+    row.innerHTML = `
+      <input type="text" placeholder="Medicine name" value="${name}" class="med-name" />
+      <input type="text" placeholder="e.g. 500mg" value="${dosage}" class="med-dosage" />
+      <input type="text" placeholder="e.g. Twice daily" value="${freq}" class="med-freq" />
+      <input type="text" placeholder="e.g. 30 days" value="${duration}" class="med-duration" />
+      <button class="remove-btn" onclick="removeMedRow('${id}')">✕</button>
+    `;
+    list.appendChild(row);
+  }
+
+  function removeMedRow(id) {
+    const el = document.getElementById('med-' + id);
+    if (el) el.remove();
+    medRows = medRows.filter(r => r != id);
+  }
+
+  // ─── Gather medicines ────────────────────
+  function getMedicines() {
+    const rows = document.querySelectorAll('.med-row');
+    const meds = [];
+    rows.forEach(row => {
+      const name = row.querySelector('.med-name').value.trim();
+      if (name) {
+        meds.push({
+          name,
+          dosage: row.querySelector('.med-dosage').value.trim(),
+          freq: row.querySelector('.med-freq').value.trim(),
+          duration: row.querySelector('.med-duration').value.trim()
+        });
+      }
+    });
+    return meds;
+  }
+
+  // ─── Issue Prescription ──────────────────
+  function issueRx() {
+    const meds = getMedicines();
+    if (!document.getElementById('pt-name').value.trim()) {
+      alert('Please enter patient name.'); return;
+    }
+    if (meds.length === 0) {
+      alert('Please add at least one medicine.'); return;
+    }
+
+    rxData = {
+      ptName:    document.getElementById('pt-name').value.trim(),
+      ptId:      document.getElementById('pt-id').value.trim(),
+      ptAge:     document.getElementById('pt-age').value.trim(),
+      ptGender:  document.getElementById('pt-gender').value,
+      docName:   document.getElementById('doc-name').value.trim(),
+      docDept:   document.getElementById('doc-dept').value.trim(),
+      diagnosis: document.getElementById('diagnosis').value.trim(),
+      notes:     document.getElementById('doc-notes').value.trim(),
+      meds,
+      apptDate:     document.getElementById('appt-date').value,
+      apptTime:     document.getElementById('appt-time').value,
+      apptHospital: document.getElementById('appt-hospital').value.trim(),
+      apptDept:     document.getElementById('appt-dept').value.trim(),
+      rxDate:    new Date().toLocaleDateString('en-MY', {day:'2-digit',month:'long',year:'numeric'}),
+      rxNumber:  'RX-' + Math.floor(10000 + Math.random() * 90000)
+    };
+
+    populatePatientView();
+    switchScreen('screen-patient');
+    document.getElementById('header-role').textContent = 'Patient App';
+    showToast('Prescription issued to patient!');
+  }
+
+  // ─── Populate patient view ───────────────
+  function populatePatientView() {
+    document.getElementById('rx-hospital-name').textContent = rxData.apptHospital || 'General Hospital';
+    document.getElementById('rx-dept-display').textContent = rxData.docDept;
+    document.getElementById('rx-date-display').textContent = rxData.rxDate;
+    document.getElementById('rx-number').textContent = rxData.rxNumber;
+    document.getElementById('rx-pt-name').textContent = rxData.ptName;
+    document.getElementById('rx-pt-id').textContent = rxData.ptId;
+    document.getElementById('rx-pt-age').textContent = rxData.ptAge + ' / ' + rxData.ptGender;
+    document.getElementById('rx-doc-name').textContent = rxData.docName;
+    document.getElementById('rx-diagnosis').textContent = rxData.diagnosis;
+    document.getElementById('rx-notes').textContent = rxData.notes;
+
+    const tbody = document.getElementById('rx-med-body');
+    tbody.innerHTML = '';
+    rxData.meds.forEach(m => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${m.name}</strong></td>
+        <td><span class="med-badge">${m.dosage}</span></td>
+        <td>${m.freq}</td>
+        <td>${m.duration}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const apptFormatted = rxData.apptDate
+      ? new Date(rxData.apptDate + 'T' + rxData.apptTime).toLocaleString('en-MY', {
+          weekday:'short', day:'numeric', month:'long', year:'numeric',
+          hour:'2-digit', minute:'2-digit'
+        })
+      : 'Not scheduled';
+    document.getElementById('rx-appt-badge').textContent =
+      '📅 ' + apptFormatted + '  |  ' + rxData.apptHospital + '  |  ' + rxData.apptDept;
+  }
+
+  // ─── Go to reminders ─────────────────────
+  function goToReminders() {
+    populateRemindersScreen();
+    switchScreen('screen-reminders');
+  }
+
+  function populateRemindersScreen() {
+    // Med reminder desc
+    const medNames = rxData.meds.map(m => m.name).join(', ');
+    document.getElementById('med-reminder-desc').textContent =
+      `Daily reminders for: ${medNames}. A repeating calendar event will be created for each medicine.`;
+
+    // Appt reminder info
+    if (rxData.apptDate) {
+      const apptFormatted = new Date(rxData.apptDate + 'T' + rxData.apptTime)
+        .toLocaleString('en-MY', {weekday:'short', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+      document.getElementById('appt-reminder-desc').textContent =
+        `Your next appointment with ${rxData.docName} (${rxData.docDept}).`;
+      document.getElementById('appt-reminder-info').textContent = '📅 ' + apptFormatted;
+    }
+
+    renderReminderList();
+  }
+
+  function renderReminderList() {
+    const list = document.getElementById('reminder-list');
+    list.innerHTML = '';
+
+    rxData.meds.forEach(m => {
+      const el = document.createElement('div');
+      el.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid #bfdbfe;background:#eff6ff;';
+      const icon = medReminderAdded ? '✅' : '⏳';
+      const status = medReminderAdded
+        ? '<span style="color:#1a9e5c;font-weight:600;font-size:13px;">Added to calendar</span>'
+        : '<span style="color:#5a6a7e;font-size:13px;">Pending — click Add to Calendar</span>';
+      el.innerHTML = `<span style="font-size:18px;">💊</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;">${m.name} — ${m.dosage}</div>
+          <div style="font-size:13px;color:#5a6a7e;">${m.freq} · ${m.duration}</div>
+        </div>
+        ${icon} ${status}`;
+      list.appendChild(el);
+    });
+
+    if (rxData.apptDate) {
+      const apptFormatted = new Date(rxData.apptDate + 'T' + rxData.apptTime)
+        .toLocaleString('en-MY', {weekday:'short', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+      const el = document.createElement('div');
+      el.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid #6ee7b7;background:#f0fdf4;';
+      const icon = apptReminderAdded ? '✅' : '⏳';
+      const status = apptReminderAdded
+        ? '<span style="color:#1a9e5c;font-weight:600;font-size:13px;">Added to calendar</span>'
+        : '<span style="color:#5a6a7e;font-size:13px;">Pending — click Add to Calendar</span>';
+      el.innerHTML = `<span style="font-size:18px;">📅</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;">Dr. Appt — ${rxData.docName}</div>
+          <div style="font-size:13px;color:#5a6a7e;">${apptFormatted} · ${rxData.apptHospital}</div>
+        </div>
+        ${icon} ${status}`;
+      list.appendChild(el);
+    }
+  }
+
+  // ─── ICS Generator ───────────────────────
+  function padZ(n) { return String(n).padStart(2,'0'); }
+
+  function toICSDate(dateStr, timeStr) {
+    const d = new Date(dateStr + 'T' + timeStr + ':00');
+    return d.getFullYear()
+      + padZ(d.getMonth()+1)
+      + padZ(d.getDate())
+      + 'T'
+      + padZ(d.getHours())
+      + padZ(d.getMinutes())
+      + '00';
+  }
+
+  function todayICSDate(timeStr) {
+    const d = new Date();
+    const [h,m] = timeStr.split(':');
+    d.setHours(+h, +m, 0, 0);
+    return d.getFullYear()
+      + padZ(d.getMonth()+1)
+      + padZ(d.getDate())
+      + 'T'
+      + padZ(d.getHours())
+      + padZ(d.getMinutes())
+      + '00';
+  }
+
+  function buildUID() {
+    return Date.now() + '-' + Math.random().toString(36).substr(2,9) + '@mediremind';
+  }
+
+  function downloadMedReminder() {
+    const timeVal = document.getElementById('med-time').value || '08:00';
+    const dtStart = todayICSDate(timeVal);
+
+    let events = '';
+    rxData.meds.forEach(m => {
+      events += [
+        'BEGIN:VEVENT',
+        'UID:' + buildUID(),
+        'DTSTART:' + dtStart,
+        'RRULE:FREQ=DAILY;COUNT=30',
+        'SUMMARY:Take ' + m.name + ' ' + m.dosage,
+        'DESCRIPTION:Medicine: ' + m.name + '\\nDosage: ' + m.dosage + '\\nFrequency: ' + m.freq + '\\nDuration: ' + m.duration + '\\nPrescribed by: ' + rxData.docName,
+        'BEGIN:VALARM',
+        'TRIGGER:-PT0M',
+        'ACTION:DISPLAY',
+        'DESCRIPTION:Time to take ' + m.name + ' ' + m.dosage,
+        'END:VALARM',
+        'END:VEVENT'
+      ].join('\r\n') + '\r\n';
+    });
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//MediRemind//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      events.trim(),
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    downloadICS(ics, 'medication-reminders.ics');
+    medReminderAdded = true;
+    renderReminderList();
+    showToast('Medication reminders added to calendar!');
+  }
+
+  function downloadApptReminder() {
+    if (!rxData.apptDate) { alert('No appointment date set.'); return; }
+    const dtStart = toICSDate(rxData.apptDate, rxData.apptTime);
+    // End = start + 1 hour
+    const endD = new Date(rxData.apptDate + 'T' + rxData.apptTime + ':00');
+    endD.setHours(endD.getHours() + 1);
+    const dtEnd = endD.getFullYear()
+      + padZ(endD.getMonth()+1)
+      + padZ(endD.getDate())
+      + 'T'
+      + padZ(endD.getHours())
+      + padZ(endD.getMinutes())
+      + '00';
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//MediRemind//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      'UID:' + buildUID(),
+      'DTSTART:' + dtStart,
+      'DTEND:' + dtEnd,
+      'SUMMARY:Doctor Appointment — ' + rxData.docName,
+      'DESCRIPTION:Doctor: ' + rxData.docName + '\\nDepartment: ' + rxData.docDept + '\\nHospital: ' + rxData.apptHospital + '\\nLocation: ' + rxData.apptDept + '\\nDiagnosis follow-up: ' + rxData.diagnosis,
+      'LOCATION:' + rxData.apptHospital + ', ' + rxData.apptDept,
+      'BEGIN:VALARM',
+      'TRIGGER:-PT60M',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Reminder: Doctor appointment in 1 hour — ' + rxData.apptHospital,
+      'END:VALARM',
+      'BEGIN:VALARM',
+      'TRIGGER:-PT1440M',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Tomorrow: Doctor appointment with ' + rxData.docName,
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    downloadICS(ics, 'appointment-reminder.ics');
+    apptReminderAdded = true;
+    renderReminderList();
+    showToast('Appointment added to calendar!');
+  }
+
+  function downloadICS(content, filename) {
+    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ─── Navigation helpers ──────────────────
+  function switchScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function switchRole(role) {
+    if (role === 'doctor') {
+      switchScreen('screen-doctor');
+      document.getElementById('header-role').textContent = 'Doctor Portal';
+    } else if (role === 'patient') {
+      switchScreen('screen-patient');
+      document.getElementById('header-role').textContent = 'Patient App';
+    }
+  }
+
+  function goToReminders() {
+    populateRemindersScreen();
+    switchScreen('screen-reminders');
+    document.getElementById('header-role').textContent = 'Patient App — Reminders';
+  }
+
+  function resetDemo() {
+    medReminderAdded = false;
+    apptReminderAdded = false;
+    rxData = {};
+    switchScreen('screen-doctor');
+    document.getElementById('header-role').textContent = 'Doctor Portal';
+    showToast('Demo reset. Ready for new prescription.');
+  }
+
+  // ─── Toast ───────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+
+</body>
+</html>
